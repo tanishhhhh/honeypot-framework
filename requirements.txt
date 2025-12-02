@@ -1,0 +1,10 @@
+pandas
+numpy
+scapy
+scikit-learn
+xgboost
+flask
+streamlit
+watchdog
+pytest
+requests
