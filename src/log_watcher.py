@@ -10,8 +10,6 @@ import sys
 # Add src to path
 sys.path.append(os.path.dirname(__file__))
 
-# We need to import FeatureEngineer to process new lines
-# Assuming FeatureEngineer can handle a single row or small df
 from feature_eng import FeatureEngineer
 
 class LogHandler(FileSystemEventHandler):
@@ -19,10 +17,16 @@ class LogHandler(FileSystemEventHandler):
         self.file_path = file_path
         self.model = model
         self.last_position = 0
-        
+        self.columns = None  # Cached header columns
+
         # Initialize last position to end of file to avoid re-reading entire file on startup
         if os.path.exists(file_path):
             self.last_position = os.path.getsize(file_path)
+            try:
+                header_df = pd.read_csv(file_path, nrows=0)
+                self.columns = header_df.columns  # Read ONCE, cache forever
+            except Exception as e:
+                print(f"Warning: could not read header: {e}")
             print(f"LogWatcher initialized. Watching {file_path} starting from byte {self.last_position}")
 
     def on_modified(self, event):
@@ -49,20 +53,10 @@ class LogHandler(FileSystemEventHandler):
             print(f"Error processing log file: {e}")
 
     def analyze_lines(self, lines):
-        # Convert lines to DataFrame
-        # We assume the lines are CSV formatted and match the schema
-        # Since we don't have the header for these new lines, we might need to assume columns
-        # OR we can read the header from the file start if needed.
-        # For this implementation, let's assume we know the columns or can infer them.
-        # Ideally, we'd read the header once and use it.
-        
-        # Let's try to read the header from the file to be safe
-        try:
-            header_df = pd.read_csv(self.file_path, nrows=0)
-            columns = header_df.columns
-        except:
-            print("Could not read header. Skipping analysis.")
+        if self.columns is None:
+            print("No column headers cached. Skipping.")
             return
+        columns = self.columns
 
         from io import StringIO
         data = StringIO(''.join(lines))
@@ -73,7 +67,7 @@ class LogHandler(FileSystemEventHandler):
             
             # Feature Engineering
             fe = FeatureEngineer(df)
-            X, _ = fe.get_processed_data()
+            X = fe.get_inference_features()
             
             # Align features with model
             if hasattr(self.model, 'feature_names_in_'):
@@ -152,8 +146,7 @@ def start_watcher_thread(log_path, model_path):
 
 if __name__ == "__main__":
     # Test run
-    # Use environment variable for path or default
-    LOG_PATH = os.getenv("LOG_PATH", r"C:\TANISH WORK\Msc CS\Semester 03\Reserach Paper\logs\logs.csv")
+    LOG_PATH = os.getenv("LOG_PATH", "logs/logs.csv")
     MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'best_model.pkl')
     
     watcher = LogWatcher(LOG_PATH, MODEL_PATH)

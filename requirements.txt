@@ -8,3 +8,6 @@ streamlit
 watchdog
 pytest
 requests
+matplotlib
+seaborn
+duckdb

@@ -4,13 +4,11 @@ import pickle
 import os
 import sys
 
-# Add src to path
 sys.path.append(os.path.dirname(__file__))
 from prevention import PreventionSystem
 
 app = Flask(__name__)
 
-# Load Model
 MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'best_model.pkl')
 model = None
 
@@ -31,60 +29,30 @@ prevention_system = PreventionSystem()
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    if not model:
+    if model is None:
         return jsonify({"error": "Model not loaded"}), 500
         
     try:
         data = request.get_json()
-        
-        # Expected features (must match training features)
-        # For simplicity, we expect the preprocessed features or raw data that we process?
-        # Ideally, we should reuse FeatureEngineer. But for this API, let's assume we receive features
-        # or we instantiate FeatureEngineer.
-        # Let's assume we receive a dictionary that matches the feature columns.
-        
-        # Feature columns from training:
+                
         feature_cols = [
-            'duration', 'orig_bytes', 'resp_bytes', 'bytes_per_session', 
+            'duration', 'orig_bytes', 'resp_bytes',
             'orig_pkts', 'resp_pkts', 'packet_count', 'history_len'
         ]
         
-        # Create DataFrame from input
         input_df = pd.DataFrame([data])
         
-        # Ensure all columns exist, fill with 0 if missing
         for col in feature_cols:
             if col not in input_df.columns:
                 input_df[col] = 0
                 
-        # Select and order columns
         X = input_df[feature_cols]
-        
-        # Add categorical columns if model expects them (one-hot encoded)
-        # This is tricky without the exact same columns as training.
-        # For XGBoost, it handles missing columns okay sometimes, but sklearn needs exact shape.
-        # In a robust system, we'd save the column list or the pipeline.
-        # For this MVP, let's assume the input provides the necessary numeric features 
-        # and we ignore the one-hot encoded ones for now or assume they are not critical for this demo 
-        # OR we should have saved the columns in training.
-        
-        # Let's try to predict.
-        # Note: If the model was trained with one-hot encoded columns, we need to provide them.
-        # The training script used `pd.get_dummies`.
-        # To fix this properly, we should have saved the columns.
-        # I will update `train_model.py` to save columns, but for now let's handle what we can.
-        
-        # Re-align columns to match model (if possible)
+                       
         if hasattr(model, 'feature_names_in_'):
-            model_cols = model.feature_names_in_
-            for col in model_cols:
-                if col not in X.columns:
-                    X[col] = 0
-            X = X[model_cols]
+            X = X.reindex(columns=model.feature_names_in_, fill_value=0)
         
         prediction = model.predict(X)[0]
         
-        # Map prediction to class name
         class_name = "Intent-to-act" if prediction == 1 else "Intent-to-probe"
         
         mitigation = prevention_system.get_mitigation(class_name)
@@ -98,9 +66,21 @@ def predict():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+@app.route('/', methods=['GET'])
+def index():
+    return jsonify({
+        "message": "ML Honeypot Framework API is running",
+        "endpoints": {
+            "predict": "/predict (POST)",
+            "health": "/health (GET)",
+            "dashboard": "http://localhost:8501"
+        }
+    })
+
 @app.route('/health', methods=['GET'])
 def health():
     return jsonify({"status": "healthy", "model_loaded": model is not None})
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    debug = os.getenv("FLASK_DEBUG", "false").lower() == "true"
+    app.run(debug=debug, port=5000)

@@ -12,7 +12,7 @@ sys.path.append(os.path.dirname(__file__))
 from simulation import render_simulation_mode
 
 # Configuration
-API_URL = "http://127.0.0.1:5000/predict"
+API_URL = os.getenv("API_URL", "http://127.0.0.1:5000/predict")
 
 st.set_page_config(
     page_title="Attack Analysis & Prevention Framework",
@@ -21,7 +21,7 @@ st.set_page_config(
 )
 
 # Title and Description
-st.title("🛡️ Automated Attack Analysis and Prevention Framework")
+st.title("Automated Attack Analysis and Prevention Framework")
 
 # Sidebar
 st.sidebar.header("Control Panel")
@@ -93,6 +93,7 @@ if page == "Real-time Analysis":
 elif page == "Historical Trends":
     st.header("Historical Attack Trends")
     st.write("Visualizing trends from the CTU HORNER dataset.")
+    st.caption("⚠️ Chart shows illustrative sample data. Connect live DB for real trends.")
     
     # Placeholder for visualizations
     # In a real app, this would query a database or load the processed CSV
@@ -112,6 +113,7 @@ elif page == "Historical Trends":
     sns.barplot(x=['Intent-to-act', 'Intent-to-probe'], y=[78884, 12398280], ax=ax, palette="viridis")
     ax.set_yscale("log")
     st.pyplot(fig)
+    plt.close(fig)
 
 elif page == "System Health":
     st.header("System Health")
@@ -131,4 +133,4 @@ elif page == "System Health":
 
 # Footer
 st.markdown("---")
-st.markdown("© 2025 Automated Attack Analysis Framework")
+st.markdown("© 2026 Automated Attack Analysis Framework")

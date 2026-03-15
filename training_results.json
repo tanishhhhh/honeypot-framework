@@ -1,0 +1,171 @@
+{
+  "Logistic Regression": {
+    "accuracy": 0.999796,
+    "f1_score": 0.983801,
+    "classification_report": {
+      "0": {
+        "precision": 0.9998584591809988,
+        "recall": 0.9999366847659514,
+        "f1-score": 0.9998975704435079,
+        "support": 2479656.0
+      },
+      "1": {
+        "precision": 0.989924918180068,
+        "recall": 0.9777524244152881,
+        "f1-score": 0.9838010204081633,
+        "support": 15777.0
+      },
+      "accuracy": 0.9997964281148802,
+      "macro avg": {
+        "precision": 0.9948916886805335,
+        "recall": 0.9888445545906197,
+        "f1-score": 0.9918492954258356,
+        "support": 2495433.0
+      },
+      "weighted avg": {
+        "precision": 0.9997956558613459,
+        "recall": 0.9997964281148802,
+        "f1-score": 0.9997958024257302,
+        "support": 2495433.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        2479499,
+        157
+      ],
+      [
+        351,
+        15426
+      ]
+    ]
+  },
+  "Random Forest": {
+    "accuracy": 0.999986,
+    "f1_score": 0.998891,
+    "classification_report": {
+      "0": {
+        "precision": 0.9999943540396241,
+        "recall": 0.9999915310833438,
+        "f1-score": 0.9999929425594917,
+        "support": 2479656.0
+      },
+      "1": {
+        "precision": 0.9986695387734414,
+        "recall": 0.9991126323128605,
+        "f1-score": 0.9988910364056905,
+        "support": 15777.0
+      },
+      "accuracy": 0.9999859743779937,
+      "macro avg": {
+        "precision": 0.9993319464065328,
+        "recall": 0.9995520816981022,
+        "f1-score": 0.9994419894825911,
+        "support": 2495433.0
+      },
+      "weighted avg": {
+        "precision": 0.9999859780942654,
+        "recall": 0.9999859743779937,
+        "f1-score": 0.9999859759234856,
+        "support": 2495433.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        2479635,
+        21
+      ],
+      [
+        14,
+        15763
+      ]
+    ]
+  },
+  "XGBoost": {
+    "accuracy": 0.999963,
+    "f1_score": 0.997054,
+    "classification_report": {
+      "0": {
+        "precision": 0.9999842719167815,
+        "recall": 0.9999782227857412,
+        "f1-score": 0.9999812473421132,
+        "support": 2479656.0
+      },
+      "1": {
+        "precision": 0.996580547112462,
+        "recall": 0.9975280471572542,
+        "f1-score": 0.9970540720326903,
+        "support": 15777.0
+      },
+      "accuracy": 0.999962731918669,
+      "macro avg": {
+        "precision": 0.9982824095146218,
+        "recall": 0.9987531349714978,
+        "f1-score": 0.9985176596874017,
+        "support": 2495433.0
+      },
+      "weighted avg": {
+        "precision": 0.9999627523783936,
+        "recall": 0.999962731918669,
+        "f1-score": 0.9999627407162666,
+        "support": 2495433.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        2479602,
+        54
+      ],
+      [
+        39,
+        15738
+      ]
+    ]
+  },
+  "XGBoost_optimized": {
+    "accuracy": 0.9999418938516883,
+    "f1_score": 0.9954071774729973,
+    "best_params": {
+      "learning_rate": 0.1,
+      "max_depth": 3,
+      "n_estimators": 100
+    },
+    "classification_report": {
+      "0": {
+        "precision": 0.9999741897913366,
+        "recall": 0.9999673341786118,
+        "f1-score": 0.999970761973224,
+        "support": 2479656.0
+      },
+      "1": {
+        "precision": 0.9948714701785488,
+        "recall": 0.995943462001648,
+        "f1-score": 0.9954071774729973,
+        "support": 15777.0
+      },
+      "accuracy": 0.9999418938516883,
+      "macro avg": {
+        "precision": 0.9974228299849427,
+        "recall": 0.9979553980901299,
+        "f1-score": 0.9976889697231106,
+        "support": 2495433.0
+      },
+      "weighted avg": {
+        "precision": 0.9999419286136849,
+        "recall": 0.9999418938516883,
+        "f1-score": 0.9999419093962724,
+        "support": 2495433.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        2479575,
+        81
+      ],
+      [
+        64,
+        15713
+      ]
+    ]
+  }
+}
