@@ -39,7 +39,11 @@ def train_models():
 
     print(f"Features shape: {X.shape}")
     print(f"Class distribution:\n{y.value_counts()}")
-    print(f"Class ratio: 1:{int(y.value_counts()[0] / y.value_counts()[1])}")
+    minority_count = y.value_counts().get(1, 0)
+    if minority_count > 0:
+        print(f"Class ratio: 1:{int(y.value_counts()[0] / minority_count)}")
+    else:
+        print("Warning: No minority-class (1) samples found in the dataset.")
 
     # 3. Split Data
     X_train, X_test, y_train, y_test = train_test_split(

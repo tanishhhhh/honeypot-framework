@@ -5,7 +5,7 @@ Run from the project root:
 """
 import sys, os
 
-sys.path.insert(0, r"c:\Users\tnshp\.gemini\antigravity\playground\Ml-Honeypot-Framework")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from src.data_loader import load_data, DB_PATH
 from src.feature_eng import FeatureEngineer

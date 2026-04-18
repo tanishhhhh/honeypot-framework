@@ -11,3 +11,7 @@ requests
 matplotlib
 seaborn
 duckdb
+psycopg2-binary
+sqlalchemy
+flask-cors
+python-dotenv

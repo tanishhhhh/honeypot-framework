@@ -14,7 +14,7 @@ class PreventionSystem:
                 "Snapshot System State for Forensics"
             ],
             "Intent-to-probe": [
-                "Rate Limit Source IP",
+                "Rate Limit Source IP", 
                 "Log Activity for Correlation",
                 "Add to Watchlist",
                 "Send Fake Responses (Deception)"

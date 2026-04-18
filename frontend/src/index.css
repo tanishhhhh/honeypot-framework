@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  --color-soc-bg: #0a0e1a;
+  --color-soc-surface: #111827;
+  --color-soc-card: #1a2236;
+  --color-soc-border: #1e293b;
+  --color-soc-accent: #3b82f6;
+  --color-soc-accent-glow: #2563eb;
+  --color-soc-success: #10b981;
+  --color-soc-danger: #ef4444;
+  --color-soc-warning: #f59e0b;
+  --color-soc-info: #3b82f6;
+  --color-soc-text: #e2e8f0;
+  --color-soc-muted: #64748b;
+}
+
+/* ── Base ───────────────────────────────────── */
+body {
+  margin: 0;
+  background: var(--color-soc-bg);
+  color: var(--color-soc-text);
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* ── Scrollbar ──────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-soc-bg); }
+::-webkit-scrollbar-thumb { background: var(--color-soc-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-soc-muted); }
+
+/* ── Severity badges ────────────────────────── */
+.severity-high   { color: #ef4444; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); }
+.severity-medium { color: #f59e0b; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3); }
+.severity-low    { color: #3b82f6; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.3); }
+
+/* ── Glow keyframes ─────────────────────────── */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(59,130,246,0.15); }
+  50%      { box-shadow: 0 0 20px rgba(59,130,246,0.35); }
+}
+
+.card-glow { animation: pulse-glow 3s ease-in-out infinite; }

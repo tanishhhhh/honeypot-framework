@@ -6,6 +6,7 @@ import threading
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import sys
+from sqlalchemy import create_engine, text as sa_text
 
 # Add src to path
 sys.path.append(os.path.dirname(__file__))
@@ -157,3 +158,58 @@ if __name__ == "__main__":
             time.sleep(1)
     except KeyboardInterrupt:
         watcher.stop()
+
+
+# ── PostgreSQL live monitor ─────────────────────────────────────────
+def watch_postgres(model, db_url: str, poll_interval: int = 5):
+    """
+    Poll a PostgreSQL ``logs`` table for new rows and classify each
+    connection using the trained ML model.
+
+    Args:
+        model: A trained scikit-learn / XGBoost classifier.
+        db_url: SQLAlchemy database URL.
+        poll_interval: Seconds between polls (default 5).
+    """
+    engine = create_engine(db_url)
+    last_id = 0
+
+    print(f"\nWatching PostgreSQL for new connections...")
+    print(f"  Poll interval: {poll_interval}s\n")
+
+    try:
+        while True:
+            try:
+                query = sa_text("SELECT * FROM logs WHERE id > :last_id ORDER BY id ASC")
+                df = pd.read_sql(query, engine, params={"last_id": last_id})
+
+                if not df.empty:
+                    last_id = int(df['id'].max())
+                    print(f"--- {len(df)} new row(s) (last_id={last_id}) ---")
+
+                    fe = FeatureEngineer(df)
+                    X = fe.get_inference_features()
+
+                    # Align features with model
+                    if hasattr(model, 'feature_names_in_'):
+                        X = X.reindex(columns=model.feature_names_in_, fill_value=0)
+
+                    predictions = model.predict(X)
+
+                    for i, pred in enumerate(predictions):
+                        row = df.iloc[i]
+                        ob = row.get('orig_bytes', '?')
+                        proto = row.get('proto', '?')
+                        state = row.get('conn_state', '?')
+                        if pred == 1:
+                            print(f"  \U0001f6a8 ATTACK | bytes={ob} | proto={proto} | state={state}")
+                        else:
+                            print(f"  \u2705 Probe  | bytes={ob} | proto={proto} | state={state}")
+
+            except Exception as e:
+                print(f"  Error during poll: {e}")
+
+            time.sleep(poll_interval)
+
+    except KeyboardInterrupt:
+        print("\nPostgreSQL watcher stopped.")
