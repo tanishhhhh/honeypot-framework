@@ -179,7 +179,7 @@ docker exec -i honeypot-live psql -U admin -d honeypot < setup_postgres.sql
 
 ### 4. Stop All Services
 
-```bash
+```bash`
 docker compose down
 ```
 
