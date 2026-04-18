@@ -4,12 +4,9 @@ scapy
 scikit-learn
 xgboost
 flask
-streamlit
 watchdog
 pytest
 requests
-matplotlib
-seaborn
 duckdb
 psycopg2-binary
 sqlalchemy

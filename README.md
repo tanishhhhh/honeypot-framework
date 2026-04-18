@@ -10,7 +10,7 @@ An automated attack analysis and prevention framework that uses machine learning
 | Data Processing   | Pandas, NumPy, DuckDB                               |
 | Machine Learning  | Scikit-learn, XGBoost                                |
 | Backend API       | Flask (REST), Flask-CORS                             |
-| Streamlit UI      | Streamlit, Matplotlib, Seaborn                       |
+
 | React Frontend    | React 19, Vite 8, Tailwind CSS 4, Recharts          |
 | Live Database     | PostgreSQL 15, SQLAlchemy, psycopg2                  |
 | Alerting & SIEM   | SMTP Email, Splunk HEC, Elasticsearch                |
@@ -25,13 +25,13 @@ Ml-Honeypot-Framework/
 ├── src/
 │   ├── app.py              # Flask REST API (prediction endpoint)
 │   ├── alerting.py          # Email alerting module (SMTP)
-│   ├── dashboard.py         # Streamlit frontend (analytics + live DB monitor)
+
 │   ├── data_loader.py       # DuckDB data ingestion
 │   ├── feature_eng.py       # Feature engineering pipeline
 │   ├── log_watcher.py       # Real-time log & PostgreSQL monitor
 │   ├── prevention.py        # Mitigation rule engine
 │   ├── siem.py              # SIEM integration (Splunk / Elasticsearch)
-│   ├── simulation.py        # External CSV upload & testing
+
 │   └── train_model.py       # ML training script (GridSearchCV)
 ├── frontend/                # React SOC Dashboard (Vite + Tailwind)
 │   ├── src/
@@ -43,13 +43,13 @@ Ml-Honeypot-Framework/
 │   └── vite.config.js
 ├── tests/                   # Unit tests (Pytest)
 ├── Dockerfile.api           # Backend container
-├── Dockerfile.ui            # Streamlit container
+
 ├── Dockerfile.frontend      # React production container (nginx)
 ├── docker-compose.yml       # Full stack orchestration
 ├── setup_postgres.sql       # PostgreSQL schema for live demo
 ├── simulate_attacks.py      # Attack traffic generator (PostgreSQL)
 ├── run_live_demo.py         # Live PostgreSQL classification monitor
-├── run.bat                  # Windows quick-start (API + Streamlit)
+├── run.bat                  # Windows quick-start (API + React)
 ├── best_model.pkl           # Trained model artifact
 ├── requirements.txt         # Python dependencies
 └── .env.example             # Environment variable template
@@ -130,23 +130,9 @@ Double-click `run.bat` or run in terminal:
 .\run.bat
 ```
 
-This starts both the Flask API and the Streamlit dashboard in separate windows.
+This starts both the Flask API and the React dashboard in separate windows.
 
-#### Option B — Manual Start
-
-Open two terminal windows:
-
-```bash
-# Terminal 1 — Flask API
-python src/app.py
-```
-
-```bash
-# Terminal 2 — Streamlit Dashboard
-streamlit run src/dashboard.py
-```
-
-#### Option C — React Frontend (SOC Dashboard)
+#### Option B — Manual Start (React Frontend)
 
 ```bash
 # Terminal 1 — Flask API (must be running)
@@ -161,7 +147,6 @@ npm run dev
 | Service              | URL                         |
 | -------------------- | --------------------------- |
 | Flask API            | http://localhost:5000        |
-| Streamlit Dashboard  | http://localhost:8501        |
 | React SOC Dashboard  | http://localhost:5173        |
 
 ---
@@ -181,10 +166,9 @@ cp .env.example .env
 docker compose up --build -d
 ```
 
-This starts **four containers**:
+This starts **three containers**:
 - `backend` — Flask API on port `5000`
 - `react-frontend` — React app (nginx) on port `3000`
-- `frontend` — Streamlit UI on port `8501`
 - `db` — PostgreSQL 15 on port `5432`
 
 ### 3. Create the Logs Table (first time only)
