@@ -1,11 +1,28 @@
+# Python
 .venv/
 __pycache__/
 .pytest_cache/
 *.pyc
 *.pyo
+
+# Frontend (runs natively via Vite, not Docker)
+frontend/node_modules
+frontend/dist
+frontend/.vite
+
+# Logs & data (mounted via Docker volumes)
 logs/
+honeypots/cowrie/logs/*
+
+# IDE / CI / Docs
+.git
 .github/
+.vscode/
+*.md
 *.db
-README.md
+
+# Scripts (not needed inside containers)
 run.bat
+stop.bat
 tests/
+

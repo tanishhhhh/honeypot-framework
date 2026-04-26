@@ -53,22 +53,22 @@ export default function Monitoring() {
       </div>
 
       {/* ── Table ──────────────────────────────── */}
-      <div className="bg-soc-card rounded-xl border border-soc-border overflow-hidden">
+      <div className="bg-soc-card rounded-xl border border-soc-border shadow-enterprise overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead>
-              <tr className="text-soc-muted text-xs uppercase tracking-wider border-b border-soc-border">
-                <th className="px-5 py-3">Timestamp</th>
-                <th className="px-5 py-3">Attack Type</th>
-                <th className="px-5 py-3">Class</th>
-                <th className="px-5 py-3">Confidence</th>
-                <th className="px-5 py-3">Severity</th>
+              <tr className="text-soc-muted bg-soc-surface/50 text-xs uppercase tracking-wider border-b border-soc-border">
+                <th className="px-5 py-3 font-semibold">Timestamp</th>
+                <th className="px-5 py-3 font-semibold">Attack Type</th>
+                <th className="px-5 py-3 font-semibold">Class</th>
+                <th className="px-5 py-3 font-semibold">Confidence</th>
+                <th className="px-5 py-3 font-semibold">Severity</th>
               </tr>
             </thead>
             <tbody>
               {recent.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-12 text-center text-soc-muted">
+                  <td colSpan={5} className="px-5 py-12 text-center text-soc-muted bg-soc-surface/20">
                     Waiting for incoming predictions…
                   </td>
                 </tr>
@@ -76,12 +76,12 @@ export default function Monitoring() {
                 recent.map((p, i) => (
                   <tr
                     key={i}
-                    className="border-b border-soc-border/50 hover:bg-white/[0.02] transition-colors"
+                    className="border-b border-soc-border hover:bg-soc-surface/50 transition-colors"
                   >
                     <td className="px-5 py-3 font-mono text-xs text-soc-muted">
                       {new Date(p.timestamp).toLocaleTimeString()}
                     </td>
-                    <td className="px-5 py-3 font-medium">{p.attack_type}</td>
+                    <td className="px-5 py-3 font-medium text-soc-text">{p.attack_type}</td>
                     <td className="px-5 py-3 text-soc-muted">{p.class_name}</td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
@@ -97,7 +97,7 @@ export default function Monitoring() {
                             }}
                           />
                         </div>
-                        <span className="text-xs text-soc-muted">
+                        <span className="text-xs font-semibold text-soc-text">
                           {(p.confidence * 100).toFixed(1)}%
                         </span>
                       </div>

@@ -66,6 +66,72 @@ Ml-Honeypot-Framework/
 
 ---
 
+## 🚀 Quick Start (Automated Orchestration)
+
+The easiest way to launch the full honeypot stack, including Docker containers, the database, the ML pipeline, and the React dashboard, is using the automated orchestrator.
+
+> **Architecture Note:** The React dashboard now runs via Vite dev server (port 5173) for improved hot-reload, theme preservation, and direct email alert integration. Docker Compose now orchestrates only backend, database, and honeypot services.
+
+**Note:** You must run the orchestrator as **Administrator** on Windows to allow the automated firewall mitigation module to function.
+
+1. **Right-click** `run.bat` in your project folder and select **"Run as Administrator"**.
+2. **The script will automatically:**
+   - Validate your Python, Docker, and Node.js environment.
+   - Check for email `.env` configuration.
+   - Boot PostgreSQL and the Flask API via Docker Compose.
+   - Create required database tables dynamically if they don't exist.
+   - Launch the real-time Python `cowrie_watcher` in a new window.
+   - Start the Vite dev server and open the SOC Dashboard at `http://localhost:5173`.
+   - Prompt you to optionally start a live SSH/Telnet attack simulation against the container.
+
+### Shutting Down
+To gracefully stop all services and automatically wipe the temporary Windows Firewall blocking rules created by the honeypot:
+1. **Right-click** `stop.bat` and select **"Run as Administrator"**.
+2. Close any remaining "Live SOC Watcher" or "Attack Simulation" terminal windows manually.
+
+### 🛠️ Troubleshooting `run.bat`
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Script crashes immediately | Pasted into PowerShell | **Double-click** `run.bat` or run `cmd /c run.bat` from PowerShell |
+| `) was unexpected at this time` | Inline SQL parentheses | Fixed — DB init now uses external `scripts/init_db.sql` |
+| Docker fails to start | Docker Desktop not running | Start Docker Desktop first |
+| Vite fails to launch | Missing `node_modules` | Script runs `npm install` automatically on first launch |
+| Watcher crashes | Missing model or `.env` | Ensure `best_model.pkl` exists (run `python src/train_model.py`) |
+
+**Manual startup** (if `run.bat` fails):
+```bash
+docker compose up -d                  # 1. Start backend, Cowrie, DB
+# Wait 30 seconds for healthchecks
+docker compose cp scripts/init_db.sql db:/tmp/init_db.sql
+docker compose exec -T db psql -U admin -d honeypot -f /tmp/init_db.sql
+python src\watchers\cowrie_watcher.py  # 3. Start watcher (Admin terminal)
+cd frontend && npm run dev            # 4. Start Vite frontend
+# Open http://localhost:5173
+```
+---
+
+### 📧 Email Alerting Troubleshooting
+
+**Dashboard shows "Not Configured":**
+
+1. Verify `.env` file exists in project root with **real** credentials:
+   ```env
+   ALERT_EMAIL_FROM=your-real-email@gmail.com
+   ALERT_EMAIL_TO=recipient@gmail.com
+   ALERT_EMAIL_PASSWORD=your-16-char-app-password
+   SMTP_SERVER=smtp.gmail.com
+   SMTP_PORT=587
+   ```
+2. Ensure `docker-compose.yml` has `env_file: - .env` under the `backend` service
+3. Restart backend: `docker compose up -d --force-recreate backend`
+4. Verify: `curl http://localhost:5000/email-status` should return `"configured": true`
+5. Test: `curl -X POST http://localhost:5000/test-email`
+
+> See [EMAIL_SETUP.md](EMAIL_SETUP.md) for generating a Gmail App Password.
+
+---
+
 ## Getting Started
 
 ### 1. Clone the Repository
@@ -130,7 +196,7 @@ Double-click `run.bat` or run in terminal:
 .\run.bat
 ```
 
-This starts both the Flask API and the React dashboard in separate windows.
+This starts the Docker services (backend, database, Cowrie) and launches the Vite frontend in a separate window.
 
 #### Option B — Manual Start (React Frontend)
 
@@ -166,10 +232,16 @@ cp .env.example .env
 docker compose up --build -d
 ```
 
-This starts **three containers**:
+This starts **three containers** (frontend runs natively via Vite):
 - `backend` — Flask API on port `5000`
-- `react-frontend` — React app (nginx) on port `3000`
+- `cowrie-live` — Cowrie honeypot on ports `2222` (SSH) / `2223` (Telnet)
 - `db` — PostgreSQL 15 on port `5432`
+
+To start the frontend separately:
+```bash
+cd frontend && npm install && npm run dev
+# Dashboard available at http://localhost:5173
+```
 
 ### 3. Create the Logs Table (first time only)
 
@@ -298,6 +370,118 @@ Response:
 | Recall           | 1.00        |
 | F1 Score         | 1.00        |
 | Inference Speed  | < 50 ms     |
+
+---
+
+## 🔴 LIVE HONEYPOT MODE
+
+This project supports swapping out the simulated data stream with a live network honeypot (Cowrie). Attackers connecting to Cowrie on port 2222 will be recorded to `cowrie.json`. A watcher script tails this log, parses each event using the ML Model feature logic, uploads it to PostgreSQL, and triggers real-time responses. **If an intent-to-act is confidently detected, it automatically blocks the IP address dynamically via Windows Firewall (`netsh`)**.
+
+### 1. Requirements
+
+Ensure Docker Desktop and PostgreSQL are running, and an elevated (Admin) PowerShell prompt if you wish to block IPs via firewall. 
+
+### 2. Start Cowrie
+
+Run this in a regular PowerShell window. It creates the honeypot network intercept on ports 2222 (SSH) and 2223 (Telnet).
+
+```bash
+docker compose -f docker-compose.cowrie.yml up -d
+```
+
+### 3. Launch the Watcher (Requires Admin)
+
+**Open a NEW PowerShell terminal AS ADMINISTRATOR.**
+The watcher monitors the real-time logs and adds the dynamic Firewall rules to mitigate detected threats.
+
+```bash
+python src/watchers/cowrie_watcher.py
+```
+
+### 4. Execute the Simulation Payload
+
+**Open a NEW PowerShell terminal.**
+Send simulated brute-force SSH attacks locally to trigger the alerts.
+
+```bash
+powershell .\attacks\test_cowrie_attacks.ps1
+```
+
+### 5. Verify the Defense 
+
+- The `cowrie_watcher.py` log should emit `🚨 BLOCKED 127.0.0.1` and `🛡️  Firewall rule created for 127.0.0.1`
+- The React dashboard should update with Live metrics and the High-Severity alert.
+
+> **Rollback instructions for Windows Firewall**:
+> To undo the automatic IP bans and test again, remove the rules via the following admin command:
+> ```powershell
+> netsh advfirewall firewall delete rule name=all | Select-String "Honeypot_Block_"
+> ```
+
+---
+
+## 📧 Email Alerts
+
+The framework supports automated email alerts for HIGH-severity attacks and scheduled daily summary reports.
+
+### Quick Setup
+
+1. **Generate a Gmail App Password** — see [EMAIL_SETUP.md](EMAIL_SETUP.md) for step-by-step instructions
+2. **Configure environment variables** in `.env`:
+
+```env
+ALERT_EMAIL_FROM=your-email@gmail.com
+ALERT_EMAIL_TO=honeytest777@gmail.com
+ALERT_EMAIL_PASSWORD=your-16-char-app-password
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+```
+
+3. **Test the connection:**
+
+```bash
+# Via API
+curl -X POST http://localhost:5000/test-email
+
+# Or via the React dashboard → Alerts page → "Send Test Email" button
+```
+
+### What Gets Emailed?
+
+| Trigger | Condition | Email Type |
+| ------- | --------- | ---------- |
+| Attack detected | `severity == HIGH` and `confidence > 90%` | 🚨 Immediate alert with full event details |
+| Scheduled | Daily at 08:00 (configurable) | 📊 Summary with stats from PostgreSQL |
+| Manual test | `POST /test-email` | ✅ Connection verification |
+
+### Rate Limiting
+
+To prevent inbox flooding during active attacks:
+- Max **1 email per source IP per 5 minutes**
+- Subsequent detections are logged but not emailed
+- Rate limit resets when the watcher process restarts
+
+### Daily Summary Reports
+
+```bash
+# Run continuously (sends at 08:00 daily)
+python src/scheduled_tasks.py
+
+# Custom time
+python src/scheduled_tasks.py --time 18:00
+
+# One-shot (for cron / Task Scheduler)
+python src/scheduled_tasks.py --once
+```
+
+### Email API Endpoints
+
+| Method | Endpoint | Description |
+| ------ | -------- | ----------- |
+| `POST` | `/test-email` | Send a test email to verify SMTP config |
+| `GET` | `/email-status` | Get email alerting config and status |
+
+> See [EMAIL_SETUP.md](EMAIL_SETUP.md) for full setup guide, alternative SMTP providers, and troubleshooting.
 
 ---
 

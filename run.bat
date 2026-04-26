@@ -1,105 +1,177 @@
 @echo off
 setlocal enabledelayedexpansion
+cd /d "%~dp0"
 
-:: Color codes
-call :colorEcho 0A "========================================"
-call :colorEcho 0A "  ML Honeypot Framework - Auto Startup"
-call :colorEcho 0A "========================================"
+:: ========================================
+:: ML Honeypot Framework - Robust Orchestrator
+:: ========================================
+:: Usage: Double-click this file, or from CMD run:  run.bat
+:: NOTE:  Do NOT paste this script into PowerShell.
+::        If you must use PowerShell, run:  cmd /c run.bat
+:: ========================================
+
+echo.
+echo ========================================
+echo   ML Honeypot Framework - Auto Launch
+echo ========================================
 echo.
 
-:: Step 1: Check Docker
-call :colorEcho 0E "[1/6] Checking Docker Desktop..."
+:: -- Admin Check --
+net session >nul 2>&1
+if errorlevel 1 (
+    echo [WARN] Not running as Administrator. Firewall mitigation may fail.
+    echo        Right-click run.bat and select "Run as Administrator".
+    echo.
+    timeout /t 3 /nobreak >nul
+)
+
+:: -- Step 1: Check Docker --
+echo [1/8] Checking Docker Desktop...
 docker info >nul 2>&1
 if errorlevel 1 (
-    call :colorEcho 0C "ERROR: Docker Desktop is not running!"
-    echo Please start Docker Desktop and run this script again.
-    pause
-    exit /b 1
+    echo [ERROR] Docker Desktop is not running or not in PATH!
+    echo [FIX]  Start Docker Desktop and try again.
+    pause & exit /b 1
 )
-call :colorEcho 02 "Docker Desktop is running."
+echo       [OK] Docker Desktop is running.
 echo.
 
-:: Step 2: Check Python
-call :colorEcho 0E "[2/6] Checking Python..."
+:: -- Step 2: Check Python --
+echo [2/8] Checking Python...
 python --version >nul 2>&1
 if errorlevel 1 (
-    call :colorEcho 0C "ERROR: Python is not installed or not in PATH!"
-    pause
-    exit /b 1
+    echo [ERROR] Python is not installed or not in PATH!
+    echo [FIX]  Install Python 3.9+ and add to PATH.
+    pause & exit /b 1
 )
-call :colorEcho 02 "Python is installed."
+echo       [OK] Python is installed.
 echo.
 
-:: Step 3: Initialize Database
-call :colorEcho 0E "[3/6] Initializing PostgreSQL database..."
-docker compose exec -T db psql -U admin -d honeypot -c "CREATE TABLE IF NOT EXISTS logs (id SERIAL PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, duration FLOAT, orig_bytes INTEGER, resp_bytes INTEGER, orig_pkts INTEGER, resp_pkts INTEGER, proto VARCHAR(10), conn_state VARCHAR(10), history VARCHAR(50), source_ip VARCHAR(45), dest_ip VARCHAR(45), prediction INTEGER, class_name VARCHAR(50), confidence FLOAT, severity VARCHAR(20), attack_type VARCHAR(100), mitigation TEXT[]);" >nul 2>&1
+:: -- Step 3: Check Node.js --
+echo [3/8] Checking Node.js...
+node --version >nul 2>&1
 if errorlevel 1 (
-    call :colorEcho 01 "WARNING: Database initialization skipped (container may not be ready yet)"
+    echo [ERROR] Node.js is not installed or not in PATH!
+    echo [FIX]  Install Node.js 18+ from https://nodejs.org
+    pause & exit /b 1
+)
+echo       [OK] Node.js is installed.
+echo.
+
+:: -- Step 4: Validate .env --
+echo [4/8] Validating Environment Configuration...
+if not exist ".env" (
+    echo       [WARN] .env file not found. Email alerts will be disabled.
+    echo       [INFO] Copy .env.example to .env to enable alerts.
 ) else (
-    call :colorEcho 02 "Database initialized successfully."
+    findstr /C:"ALERT_EMAIL_PASSWORD=" .env >nul
+    if errorlevel 1 (
+        echo       [WARN] SMTP password not configured. Email alerts disabled.
+    ) else (
+        echo       [OK] Email alert configuration detected.
+    )
 )
 echo.
 
-:: Step 4: Start Docker Services
-call :colorEcho 0E "[4/6] Starting Docker containers..."
-docker compose up -d --build
+:: -- Step 5: Start Docker Services --
+echo [5/8] Starting Docker Compose Services...
+docker compose up -d
 if errorlevel 1 (
-    call :colorEcho 0C "ERROR: Failed to start Docker containers!"
-    docker compose down
-    pause
-    exit /b 1
+    echo [ERROR] Failed to start containers!
+    echo [FIX]  Run: docker compose logs
+    pause & exit /b 1
 )
-call :colorEcho 02 "Docker containers started."
+echo       [OK] Backend, Cowrie, and database services started.
 echo.
 
-:: Step 5: Wait for Healthchecks
-call :colorEcho 0E "[5/6] Waiting for services to be healthy..."
+:: -- Step 6: Wait for Healthchecks --
+echo [6/8] Waiting for services to initialize (30 seconds)...
 timeout /t 30 /nobreak >nul
 docker compose ps
 echo.
 
-:: Step 6: Display Access Information
-call :colorEcho 0E "[6/6] System ready!"
-echo.
-call :colorEcho 0A "========================================"
-call :colorEcho 0A "  Services Running:"
-call :colorEcho 0A "========================================"
-call :colorEcho 03 "React Dashboard:  http://localhost:5173"
-call :colorEcho 03 "Flask API:          http://localhost:5000"
-call :colorEcho 03 "PostgreSQL:         localhost:5432"
+:: -- Step 7: Initialize Database Schema --
+echo [7/8] Initializing Database Tables...
+if exist "scripts\init_db.sql" (
+    docker compose cp scripts\init_db.sql db:/tmp/init_db.sql >nul 2>&1
+    docker compose exec -T db psql -U admin -d honeypot -f /tmp/init_db.sql >nul 2>&1
+    if errorlevel 1 (
+        echo       [WARN] DB init may have failed - tables may already exist.
+    ) else (
+        echo       [OK] Database schema verified.
+    )
+) else (
+    echo       [WARN] scripts\init_db.sql not found. Skipping DB init.
+    echo       [FIX]  Ensure scripts\init_db.sql exists in the project root.
+)
 echo.
 
-:: Auto-open browser
+:: -- Step 8: Launch Watcher + Vite --
+echo [8/8] Launching Real-Time Classifier and Vite Frontend...
+
+:: Launch watcher in new window
+if exist "src\watchers\cowrie_watcher.py" (
+    start "Live SOC Watcher" cmd /k python src\watchers\cowrie_watcher.py
+    echo       [OK] Watcher service launched in new window.
+) else (
+    echo       [WARN] cowrie_watcher.py not found. Real-time classification disabled.
+)
+
+:: Install frontend dependencies if needed
+echo       [INFO] Starting Vite Dev Server on port 5173...
+if not exist "frontend\node_modules" (
+    echo       [INFO] Installing frontend dependencies first-time setup...
+    cd /d "%~dp0frontend"
+    call npm install
+    cd /d "%~dp0"
+)
+
+:: Start Vite in a new window
+start "Vite Frontend" cmd /k "cd /d %~dp0frontend & npm run dev"
+timeout /t 5 /nobreak >nul
 start http://localhost:5173
+echo       [OK] React SOC Dashboard opened at http://localhost:5173
+echo.
 
-:: Ask user about optional components
-set /p start_simulation="Start attack simulation? (Y/N): "
-if /i "!start_simulation!"=="Y" (
-    call :colorEcho 0E "Starting attack simulation in new window..."
-    start "Attack Simulation" cmd /k "python simulate_attacks.py"
+:: -- Optional Attack Simulation --
+set /p run_attack="Start live attack simulation? (Y/N): "
+if /i "!run_attack!"=="Y" (
+    if exist "attacks\test_cowrie_attacks.ps1" (
+        echo       [INFO] Launching attack simulation...
+        start "Attack Simulation" powershell -ExecutionPolicy Bypass -File .\attacks\test_cowrie_attacks.ps1
+    ) else (
+        echo       [WARN] Attack simulation script not found.
+    )
 )
 
-set /p start_watcher="Start log watcher for real-time classification? (Y/N): "
-if /i "!start_watcher!"=="Y" (
-    call :colorEcho 0E "Starting log watcher in new window..."
-    start "Log Watcher" cmd /k "python src/log_watcher.py"
-)
-
+:: -- Final Status --
 echo.
-call :colorEcho 0A "========================================"
-call :colorEcho 0A "  Press Ctrl+C to stop all services"
-call :colorEcho 0A "========================================"
+echo ========================================
+echo   [OK] System Fully Operational!
 echo.
-
-:: Cleanup on exit
-:cleanup
+echo   Dashboard : http://localhost:5173  (Vite Dev Server)
+echo   API       : http://localhost:5000
+echo   Honeypot  : SSH on 2222 / Telnet on 2223
+echo   Watcher   : Check 'Live SOC Watcher' window
+echo   Frontend  : Check 'Vite Frontend' window
+echo ========================================
 echo.
-call :colorEcho 0E "Shutting down..."
-docker compose down
-call :colorEcho 02 "All services stopped."
+echo Press any key to exit (services continue running in background).
+pause >nul
 exit /b 0
 
-:: Color output function
-:colorEcho
-echo %~2
-exit /b 0
+:: ========================================
+:: MANUAL STARTUP (if run.bat fails)
+:: ========================================
+:: 1. Start Docker:
+::      docker compose up -d
+:: 2. Wait 30s, then init DB:
+::      docker compose cp scripts/init_db.sql db:/tmp/init_db.sql
+::      docker compose exec -T db psql -U admin -d honeypot -f /tmp/init_db.sql
+:: 3. Start watcher (Admin terminal):
+::      python src\watchers\cowrie_watcher.py
+:: 4. Start frontend:
+::      cd frontend && npm install && npm run dev
+:: 5. Open browser:
+::      http://localhost:5173
+:: ========================================

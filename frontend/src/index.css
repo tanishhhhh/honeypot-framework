@@ -1,18 +1,20 @@
 @import "tailwindcss";
 
 @theme {
-  --color-soc-bg: #0a0e1a;
-  --color-soc-surface: #111827;
-  --color-soc-card: #1a2236;
-  --color-soc-border: #1e293b;
-  --color-soc-accent: #3b82f6;
-  --color-soc-accent-glow: #2563eb;
+  --color-soc-bg: #f8fafc;
+  --color-soc-surface: #f1f5f9;
+  --color-soc-card: #ffffff;
+  --color-soc-border: #e2e8f0;
+  --color-soc-accent: #2563eb;
+  --color-soc-accent-glow: #1d4ed8;
   --color-soc-success: #10b981;
   --color-soc-danger: #ef4444;
   --color-soc-warning: #f59e0b;
   --color-soc-info: #3b82f6;
-  --color-soc-text: #e2e8f0;
+  --color-soc-text: #0f172a;
   --color-soc-muted: #64748b;
+  
+  --shadow-enterprise: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
 
 /* ── Base ───────────────────────────────────── */
@@ -26,18 +28,15 @@ body {
 /* ── Scrollbar ──────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--color-soc-bg); }
-::-webkit-scrollbar-thumb { background: var(--color-soc-border); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--color-soc-muted); }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 /* ── Severity badges ────────────────────────── */
-.severity-high   { color: #ef4444; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); }
-.severity-medium { color: #f59e0b; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3); }
-.severity-low    { color: #3b82f6; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.3); }
+.severity-high   { color: #991b1b; background: #fee2e2; border: 1px solid #fecaca; }
+.severity-medium { color: #92400e; background: #fef3c7; border: 1px solid #fde68a; }
+.severity-low    { color: #1e3a8a; background: #dbeafe; border: 1px solid #bfdbfe; }
 
-/* ── Glow keyframes ─────────────────────────── */
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 8px rgba(59,130,246,0.15); }
-  50%      { box-shadow: 0 0 20px rgba(59,130,246,0.35); }
-}
+/* ── Glow keyframes (Removed for enterprise Light Theme) */
+.card-glow { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.card-glow:hover { transform: translateY(-2px); box-shadow: var(--shadow-enterprise); }
 
-.card-glow { animation: pulse-glow 3s ease-in-out infinite; }

@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  cowrie:
+    image: cowrie/cowrie:latest
+    container_name: cowrie-live
+    ports:
+      - "2222:2222"
+      - "2223:2223"
+    volumes:
+      - ./honeypots/cowrie/logs:/cowrie/log
+      - ./honeypots/cowrie/config:/cowrie/cowrie.cfg.d
+    networks:
+      - ml-honeypot-framework_default
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  ml-honeypot-framework_default:
+    external: true

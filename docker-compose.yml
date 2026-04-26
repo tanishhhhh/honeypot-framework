@@ -4,23 +4,15 @@ services:
       context: .
       dockerfile: Dockerfile.api
     ports:
-      - "5000:5000"
+      - "5000:5000"   # Exposed to host for native Vite frontend (localhost:5173)
     volumes:
       - ./logs:/app/logs
+    env_file:
+      - .env          # Injects SMTP, SIEM, and all user-defined variables into container
     environment:
       - LOG_PATH=/app/logs/logs.csv
       - FLASK_DEBUG=false
       - DB_URL=postgresql://admin:admin123@db:5432/honeypot
-      # Email alerting (optional)
-      - ALERT_EMAIL_FROM=${ALERT_EMAIL_FROM:-}
-      - ALERT_EMAIL_TO=${ALERT_EMAIL_TO:-}
-      - ALERT_EMAIL_PASSWORD=${ALERT_EMAIL_PASSWORD:-}
-      - SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com}
-      - SMTP_PORT=${SMTP_PORT:-587}
-      # SIEM (optional)
-      - SPLUNK_HEC_URL=${SPLUNK_HEC_URL:-}
-      - SPLUNK_HEC_TOKEN=${SPLUNK_HEC_TOKEN:-}
-      - ELASTIC_URL=${ELASTIC_URL:-}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
       interval: 10s
@@ -31,16 +23,30 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  react-frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
+  # NOTE: React frontend runs natively via Vite on port 5173 (outside Docker).
+  # See Dockerfile.frontend for legacy Nginx production build instructions.
+
+  cowrie-live:
+    image: cowrie/cowrie:latest
+    container_name: cowrie-live
     ports:
-      - "3000:80"
-    depends_on:
-      backend:
-        condition: service_healthy
+      - "2222:2222"
+      - "2223:2223"
+    volumes:
+      - ./honeypots/cowrie/logs:/cowrie/log
+      - ./honeypots/cowrie/config:/cowrie/cowrie.cfg.d
+    healthcheck:
+      test: ["CMD-SHELL", "ss -tlnp | grep 2222 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   db:
     image: postgres:15

@@ -9,11 +9,11 @@ from datetime import datetime, timezone
 
 sys.path.append(os.path.dirname(__file__))
 from prevention import PreventionSystem
-from alerting import send_email_alert
+from alerting import send_email_alert, EmailAlerter
 from siem import send_to_siem
 
 app = Flask(__name__)
-CORS(app)  # Allow cross-origin requests from React frontend
+CORS(app, resources={r"/*": {"origins": ["http://localhost:5173", "http://localhost:5000"]}})
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'best_model.pkl')
 model = None
@@ -177,6 +177,35 @@ def health():
         "model_type": type(model).__name__ if model else None,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     })
+
+# ── Email alert endpoints ────────────────────────────
+
+@app.route('/test-email', methods=['POST'])
+def test_email():
+    """Send a test email to verify SMTP configuration."""
+    try:
+        alerter = EmailAlerter()
+        if not alerter.is_configured():
+            return jsonify({
+                "success": False,
+                "message": "Email not configured. Set ALERT_EMAIL_FROM, ALERT_EMAIL_PASSWORD, and ALERT_EMAIL_TO in .env"
+            }), 400
+
+        success = alerter.test_email_connection()
+        return jsonify({
+            "success": success,
+            "message": "Test email sent successfully!" if success else "Failed to send test email — check server logs."
+        }), 200 if success else 500
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@app.route('/email-status', methods=['GET'])
+def email_status():
+    """Return current email alerting configuration status."""
+    alerter = EmailAlerter()
+    return jsonify(alerter.get_status())
+
 
 if __name__ == "__main__":
     debug = os.getenv("FLASK_DEBUG", "false").lower() == "true"

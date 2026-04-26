@@ -26,4 +26,23 @@ export async function getHealth() {
   return response.data;
 }
 
+/**
+ * Send a test email to verify SMTP configuration.
+ * POST /test-email
+ */
+export async function sendTestEmail() {
+  const response = await client.post('/test-email');
+  return response.data;
+}
+
+/**
+ * Get email alerting configuration status.
+ * GET /email-status
+ */
+export async function getEmailStatus() {
+  const response = await client.get('/email-status');
+  return response.data;
+}
+
 export default client;
+

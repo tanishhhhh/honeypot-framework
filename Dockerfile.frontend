@@ -1,3 +1,14 @@
+# ⚠️ DEPRECATED: This Dockerfile is no longer used by docker-compose.yml.
+# The React frontend now runs natively via Vite dev server (port 5173).
+# This file is retained for reference and potential future production builds.
+#
+# To build frontend for production:
+#   docker build -f Dockerfile.frontend -t ml-honeypot-frontend .
+#   docker run -p 3000:80 ml-honeypot-frontend
+#
+# Current architecture: Vite dev server runs outside Docker for HMR support.
+# ──────────────────────────────────────────────────────────────────────────
+
 FROM node:20-alpine AS build
 WORKDIR /app
 
